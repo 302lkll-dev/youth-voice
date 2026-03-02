@@ -1,40 +1,58 @@
+// 1. Supabase 설정 (주신 정보를 적용했습니다)
+const SUPABASE_URL = 'https://hpxbybfwgchdrkxoqwph.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhweGJ5YmZ3Z2NoZHJreG9xd3BoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NTA0MDksImV4cCI6MjA4ODAyNjQwOX0.pA_Ssa5kedLbS1pDDsEkIBkmKrIJ6h0-D4iDT8jKq6w';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const submitBtn = document.getElementById('submitBtn');
 const commentInput = document.getElementById('commentInput');
 const commentList = document.getElementById('commentList');
 
-window.onload = function() {
-    const savedComments = JSON.parse(localStorage.getItem('myComments')) || [];
-    savedComments.forEach(text => {
-        renderComment(text);
-    });
+// 페이지 로드 시 DB에서 댓글 가져오기
+window.onload = async function() {
+    await fetchComments();
 };
 
-submitBtn.addEventListener('click', function() {
-    const text = commentInput.value;
-    if (text.trim() === "") {
-        alert("내용을 입력해주세요!");
-        return;
-    }
-    renderComment(text);
-    saveComment(text);
-    commentInput.value = "";
-});
+async function fetchComments() {
+    const { data, error } = await _supabase
+        .from('comments')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-function renderComment(text) {
-    const newComment = document.createElement('div');
-    newComment.className = "bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-4";
-    newComment.innerHTML = `
-        <div class="flex items-center gap-2 mb-2">
-            <span class="font-bold text-sm" style="color: #E61E2B;">익명의 청년</span>
-            <span class="text-xs text-gray-400">방금 전</span>
-        </div>
-        <p class="text-gray-700 text-sm">${text}</p>
-    `;
-    commentList.prepend(newComment);
+    if (!error && data) {
+        commentList.innerHTML = ''; 
+        data.forEach(item => {
+            renderComment(item.content, item.created_at);
+        });
+    }
 }
 
-function saveComment(text) {
-    const savedComments = JSON.parse(localStorage.getItem('myComments')) || [];
-    savedComments.push(text);
-    localStorage.setItem('myComments', JSON.stringify(savedComments));
+submitBtn.addEventListener('click', async function() {
+    const text = commentInput.value;
+    if (!text.trim()) return alert("내용을 입력해주세요!");
+
+    // DB에 저장
+    const { error } = await _supabase
+        .from('comments')
+        .insert([{ content: text }]);
+
+    if (error) {
+        alert("저장 실패: " + error.message);
+    } else {
+        commentInput.value = "";
+        await fetchComments(); // 목록 갱신
+    }
+});
+
+function renderComment(text, time) {
+    const date = new Date(time).toLocaleString('ko-KR', { hour12: false }).slice(5, 16);
+    const newComment = document.createElement('div');
+    newComment.className = "bg-white p-4 rounded-xl border border-gray-200 shadow-sm animate-fade-in";
+    newComment.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-sm" style="color: #E61E2B;">익명의 청년</span>
+            <span class="text-[10px] text-gray-400">${date}</span>
+        </div>
+        <p class="text-gray-700 text-sm leading-relaxed">${text}</p>
+    `;
+    commentList.appendChild(newComment);
 }
