@@ -6,46 +6,57 @@ const submitBtn = document.getElementById('submitBtn');
 const commentInput = document.getElementById('commentInput');
 const pwInput = document.getElementById('pwInput');
 const commentList = document.getElementById('commentList');
+const scrollTopBtn = document.getElementById('scrollTopBtn');
 
 let isAdmin = false;
+let currentSort = 'created_at'; // 기본 정렬값
 
 window.onload = async () => await fetchComments();
 
-function toggleAdminMode() {
-    const password = prompt("관리자 비밀번호를 입력하세요.");
-    if (password === "2028") {
-        isAdmin = !isAdmin;
-        alert(isAdmin ? "관리자 모드 활성화" : "관리자 모드 해제");
-        fetchComments();
-    } else { alert("틀렸습니다."); }
+// 스크롤 감지 (위로 가기 버튼 표시)
+window.onscroll = () => {
+    if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+        scrollTopBtn.style.display = "flex";
+    } else {
+        scrollTopBtn.style.display = "none";
+    }
+};
+
+// 정렬 변경 함수
+function changeSort(sortType) {
+    currentSort = sortType;
+    document.getElementById('sortNew').className = sortType === 'created_at' ? 'text-point-red underline' : 'text-gray-400';
+    document.getElementById('sortPopular').className = sortType === 'likes' ? 'text-point-red underline' : 'text-gray-400';
+    fetchComments();
 }
 
 async function fetchComments() {
-    const { data, error } = await _supabase.from('comments').select('*').order('created_at', { ascending: false });
+    const { data, error } = await _supabase
+        .from('comments')
+        .select('*')
+        .order(currentSort, { ascending: false });
     if (!error && data) {
         commentList.innerHTML = ''; 
         data.forEach(item => renderComment(item));
     }
 }
 
-// 삭제 함수 (관리자거나 비번이 맞거나)
 async function deleteComment(id, originalPw) {
     if (!isAdmin) {
         const userPw = prompt("비밀번호를 입력하세요.");
-        if (userPw !== originalPw) {
-            alert("비밀번호가 일치하지 않습니다.");
-            return;
-        }
+        if (userPw !== originalPw) return alert("비밀번호가 일치하지 않습니다.");
     }
-    
     if (confirm("정말 삭제하시겠습니까?")) {
         const { error } = await _supabase.from('comments').delete().eq('id', id);
         if (!error) await fetchComments();
     }
 }
 
-async function addLike(id, currentLikes) {
-    const { error } = await _supabase.from('comments').update({ likes: (currentLikes || 0) + 1 }).eq('id', id);
+// 좋아요/싫어요 업데이트 함수
+async function updateReaction(id, field, currentValue) {
+    const updateData = {};
+    updateData[field] = (currentValue || 0) + 1;
+    const { error } = await _supabase.from('comments').update(updateData).eq('id', id);
     if (!error) await fetchComments();
 }
 
@@ -53,11 +64,9 @@ submitBtn.addEventListener('click', async () => {
     const text = commentInput.value;
     const pw = pwInput.value;
     if (!text.trim() || !pw.trim()) return alert("내용과 비밀번호를 모두 입력해주세요!");
-
-    const { error } = await _supabase.from('comments').insert([{ content: text, likes: 0, password: pw }]);
+    const { error } = await _supabase.from('comments').insert([{ content: text, likes: 0, dislikes: 0, password: pw }]);
     if (!error) {
-        commentInput.value = "";
-        pwInput.value = "";
+        commentInput.value = ""; pwInput.value = "";
         await fetchComments();
     }
 });
@@ -67,19 +76,34 @@ function renderComment(item) {
     const newComment = document.createElement('div');
     newComment.className = "bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-4 animate-fade-in";
     
+    const deleteBtn = `<button onclick="deleteComment(${item.id}, '${item.password}')" class="text-gray-300 hover:text-red-500 text-[10px] transition-colors">삭제</button>`;
+
     newComment.innerHTML = `
         <div class="flex items-center justify-between mb-2">
             <span class="font-bold text-sm text-point-red">익명의 청년</span>
             <span class="text-[10px] text-gray-400">${date}</span>
         </div>
-        <p class="text-gray-700 text-sm mb-3">${item.content}</p>
-        <div class="flex justify-between items-center">
-            <button onclick="deleteComment(${item.id}, '${item.password}')" class="text-gray-300 hover:text-red-500 text-xs transition-colors">삭제</button>
-            <button onclick="addLike(${item.id}, ${item.likes || 0})" 
-                class="flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full border hover:bg-red-50 transition-all shadow-sm">
-                <span>❤️</span> <span>${item.likes || 0}</span>
-            </button>
+        <p class="text-gray-700 text-sm mb-4 leading-relaxed">${item.content}</p>
+        <div class="flex justify-between items-end">
+            ${deleteBtn}
+            <div class="flex gap-2">
+                <button onclick="updateReaction(${item.id}, 'likes', ${item.likes})" class="flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-full border hover:bg-red-50 transition-all shadow-sm">
+                    <span>❤️</span> <span>${item.likes || 0}</span>
+                </button>
+                <button onclick="updateReaction(${item.id}, 'dislikes', ${item.dislikes})" class="flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-full border hover:bg-gray-100 transition-all shadow-sm">
+                    <span>🤔</span> <span>${item.dislikes || 0}</span>
+                </button>
+            </div>
         </div>
     `;
     commentList.appendChild(newComment);
+}
+
+function toggleAdminMode() {
+    const password = prompt("관리자 비밀번호를 입력하세요.");
+    if (password === "2028") {
+        isAdmin = !isAdmin;
+        alert(isAdmin ? "관리자 모드 활성화" : "관리자 모드 해제");
+        fetchComments();
+    } else { alert("틀렸습니다."); }
 }
