@@ -7,60 +7,44 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { 'point-red': '#E61E2B' }
-                }
-            }
-        }
+        tailwind.config = { theme: { extend: { colors: { 'point-red': '#E61E2B' } } } }
     </script>
     <style>
         .red-text { color: #E61E2B; }
         .red-bg { background-color: #E61E2B; }
-        .red-border { border-color: #E61E2B; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s ease-out; }
-        
-        /* 스크롤바 디자인 (깔끔하게) */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #E61E2B; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen font-sans antialiased text-gray-900 overflow-x-hidden">
+<body class="bg-gray-50 min-h-screen font-sans antialiased text-gray-900">
 
     <div class="max-w-xl mx-auto py-12 px-4">
         <div class="text-center mb-10">
-            <img src="logo.png" alt="청년보이스 로고" class="mx-auto mb-2 h-48 w-auto object-contain">
+            <img src="logo.png" alt="청년보이스 로고" class="mx-auto mb-4 h-32 w-auto object-contain">
             <h1 class="text-4xl font-black mb-2 red-text tracking-tighter">청년보이스</h1> 
             <p class="text-gray-500 font-medium">우리의 목소리가 정책이 됩니다.</p>
         </div>
 
-        <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-                <span class="red-text text-2xl">📢</span> 오늘의 주제
-            </h2>
-            <p class="text-gray-700 leading-relaxed font-medium">
-                "청년들을 위한 가장 필요한 정책은 무엇일까요? 자유롭게 의견을 남겨주세요."
-            </p>
-        </div>
-
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
             <textarea id="commentInput" 
-                class="w-full h-24 p-4 border rounded-xl focus:ring-2 focus:ring-[#E61E2B] focus:ring-opacity-20 focus:border-[#E61E2B] outline-none resize-none transition text-sm bg-gray-50"
+                class="w-full h-24 p-4 border rounded-xl focus:ring-2 focus:ring-[#E61E2B] focus:ring-opacity-20 outline-none resize-none transition text-sm bg-gray-50 mb-3"
                 placeholder="따뜻한 댓글을 남겨주세요..."></textarea>
-            <button id="submitBtn" 
-                class="w-full mt-3 text-white py-3 rounded-xl font-bold transition red-bg hover:opacity-90 active:scale-95 shadow-md shadow-red-200">
-                댓글 등록하기
-            </button> 
+            
+            <div class="flex gap-2">
+                <input type="password" id="pwInput" maxlength="4"
+                    class="w-1/2 p-3 border rounded-xl text-sm outline-none focus:border-[#E61E2B]" 
+                    placeholder="삭제 비밀번호(4자리)">
+                <button id="submitBtn" 
+                    class="w-1/2 text-white py-3 rounded-xl font-bold transition red-bg hover:opacity-90 shadow-md">
+                    댓글 등록
+                </button>
+            </div>
         </div>
 
-        <div id="commentList" class="space-y-4 mb-12">
-            </div>
+        <div id="commentList" class="space-y-4 mb-12"></div>
 
         <div class="border-t border-gray-200 pt-8 text-center">
-            <button onclick="toggleAdminMode()" class="text-gray-400 text-[10px] hover:text-gray-600 transition-colors tracking-widest uppercase">
+            <button onclick="toggleAdminMode()" class="text-gray-400 text-[10px] hover:text-gray-600 tracking-widest uppercase">
                 Admin Mode
             </button>
         </div>
@@ -69,5 +53,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
-
