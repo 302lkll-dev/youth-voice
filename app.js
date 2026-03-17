@@ -101,7 +101,7 @@ function renderComment(item) {
 
 function toggleAdminMode() {
     const password = prompt("관리자 비밀번호를 입력하세요.");
-    if (password === "2028") {
+    if (password === "eoqkrdl123") {
         isAdmin = !isAdmin;
         alert(isAdmin ? "관리자 모드 활성화" : "관리자 모드 해제");
         fetchComments();
